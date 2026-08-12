@@ -1,0 +1,160 @@
+<!-- ============================================================
+     REVIEW DASHBOARD  (/review)
+     Component API: drafts, stats, selectedStatus, loading, page,
+       totalPages, onStatusChange(), nextPage(), prevPage(),
+       channelIcon(), scoreColor()
+     Notes:
+       • `drafts` is expected to be the CURRENT page's filtered slice.
+       • selectedStatus accepts 'ALL' plus the four DraftStatus values.
+       • Review button navigates via routerLink — adjust to your router.
+       • See ts-changes.md for the small additions (stats shape, 'ALL').
+============================================================ -->
+<div class="dash">
+
+  <!-- top bar -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__mark" aria-hidden="true">🛰️</span>
+      <span class="topbar__name">Community Signal</span>
+    </div>
+
+    <div class="topbar__user">
+      <div class="avatar" aria-hidden="true">R</div>
+      <div class="topbar__id">
+        <span class="topbar__username">{{ currentUser?.username }}</span>
+        <span class="badge-role">{{ currentUser?.role === 'ROLE_ADMIN' ? 'ADMIN' : 'REVIEWER' }}</span>
+      </div>
+      <button class="btn btn--ghost btn--logout" type="button" routerLink="/login">Log out</button>
+    </div>
+  </header>
+
+  <main class="dash__main">
+    <div class="dash__head">
+      <h1>Review queue</h1>
+      <p>Drafts surfaced by the signal engine, waiting on a human decision.</p>
+    </div>
+
+    <!-- stats -->
+    <section class="stats" aria-label="Queue statistics">
+      <div class="stat">
+        <span class="stat__icon stat__icon--pending" aria-hidden="true">🕐</span>
+        <div><div class="stat__num">{{ stats.pending }}</div><div class="stat__label">PENDING</div></div>
+      </div>
+      <div class="stat">
+        <span class="stat__icon stat__icon--review" aria-hidden="true">👁️</span>
+        <div><div class="stat__num">{{ stats.in_review }}</div><div class="stat__label">IN REVIEW</div></div>
+      </div>
+      <div class="stat">
+        <span class="stat__icon stat__icon--approved" aria-hidden="true">✓</span>
+        <div><div class="stat__num">{{ stats.approved }}</div><div class="stat__label">APPROVED</div></div>
+      </div>
+      <div class="stat">
+        <span class="stat__icon stat__icon--rejected" aria-hidden="true">✕</span>
+        <div><div class="stat__num">{{ stats.rejected }}</div><div class="stat__label">REJECTED</div></div>
+      </div>
+    </section>
+
+    <!-- status tabs -->
+    <nav class="tabs" aria-label="Filter by status">
+      <button
+        *ngFor="let tab of statusTabs"
+        type="button"
+        class="tab"
+        [class.tab--active]="selectedStatus === tab.value"
+        (click)="onStatusChange(tab.value)">
+        <span>{{ tab.label }}</span>
+        <span class="tab__count">{{ tab.count }}</span>
+      </button>
+    </nav>
+
+    <!-- table -->
+    <section class="card">
+      <div class="card__scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>CHANNEL</th>
+              <th>CONTENT</th>
+              <th>STATUS</th>
+              <th>GUARDRAIL</th>
+              <th>CREATED</th>
+              <th class="table__right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- loading skeleton -->
+            <ng-container *ngIf="loading">
+              <tr class="skeleton-row" *ngFor="let row of [1,2,3,4,5,6]">
+                <td><span class="skeleton" style="width:90px"></span></td>
+                <td><span class="skeleton" style="width:280px"></span></td>
+                <td><span class="skeleton" style="width:70px"></span></td>
+                <td><span class="skeleton" style="width:80px"></span></td>
+                <td><span class="skeleton" style="width:60px"></span></td>
+                <td class="table__right"><span class="skeleton skeleton--btn"></span></td>
+              </tr>
+            </ng-container>
+
+            <!-- rows -->
+            <ng-container *ngIf="!loading">
+              <tr *ngFor="let draft of drafts">
+                <td>
+                  <span class="channel" [ngClass]="'channel--' + draft.channel.toLowerCase()">
+                    <span aria-hidden="true">{{ channelIcon(draft.channel) }}</span>
+                    <span>{{ draft.channel | titlecase }}</span>
+                  </span>
+                </td>
+                <td class="table__content">
+                  <p class="clamp-2">{{ draft.content }}</p>
+                </td>
+                <td>
+                  <span class="status" [ngClass]="'status--' + draft.status.toLowerCase()">
+                    {{ draft.status | replace:'_':' ' | titlecase }}
+                  </span>
+                </td>
+                <td>
+                  <div class="guardrail">
+                    <span class="guardrail__track">
+                      <span class="guardrail__fill"
+                            [style.width.%]="(draft.guardrailScore ?? 0) * 100"
+                            [style.background]="scoreColor((draft.guardrailScore ?? 0) * 100)"></span>
+                    </span>
+                    <span class="guardrail__pct">{{ ((draft.guardrailScore ?? 0) * 100).toFixed(0) }}%</span>
+                  </div>
+                </td>
+                <td class="table__created">{{ draft.createdAt }}</td>
+                <td class="table__right">
+                  <a class="btn btn--outline btn--sm" [routerLink]="['/review', draft.id]">
+                    {{ draft.status === 'PENDING' || draft.status === 'IN_REVIEW' ? 'Review' : 'View' }}
+                  </a>
+                </td>
+              </tr>
+
+              <!-- empty state -->
+              <tr *ngIf="drafts.length === 0" class="empty-row">
+                <td colspan="6">
+                  <div class="empty">
+                    <div class="empty__art" aria-hidden="true">📭</div>
+                    <div class="empty__title">Nothing here yet</div>
+                    <div class="empty__msg">No drafts match this status. Try another tab.</div>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- pagination -->
+      <div class="pager" *ngIf="!loading && drafts.length > 0">
+        <span class="pager__info">Page {{ page }} of {{ totalPages }}</span>
+        <div class="pager__nav">
+          <button type="button" class="btn btn--outline btn--sm"
+                  (click)="prevPage()" [disabled]="page <= 1">‹ Prev</button>
+          <span class="pager__page">Page {{ page }} of {{ totalPages }}</span>
+          <button type="button" class="btn btn--outline btn--sm"
+                  (click)="nextPage()" [disabled]="page >= totalPages">Next ›</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

@@ -1,0 +1,52 @@
+# ── Java ──────────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+*.pyc
+
+# ── IDE ───────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# ── Docker ────────────────────────────────────────────────────
+.docker/
+
+# ── Secrets (never commit) ────────────────────────────────────
+.env.local
+.env.production
+*.key
+*.pem
+secrets/
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
+
+# Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.cache/
+frontend/proxy.conf.json

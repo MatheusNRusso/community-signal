@@ -1,0 +1,62 @@
+server:
+  port: 8085
+  shutdown: graceful
+
+spring:
+  application:
+    name: review-api
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:19432/community_signal}
+    username: ${DATABASE_USER:signal_user}
+    password: ${DATABASE_PASSWORD:signal_pass}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+jwt:
+  secret: ${JWT_SECRET:community-signal-review-api-secret-key-change-in-production-min-64-chars-required}
+  expiration: 86400000
+
+admin:
+  username: ${ADMIN_USERNAME:#{null}}
+  password: ${ADMIN_PASSWORD:#{null}}
+
+app:
+  topics:
+    approved-drafts: approved-drafts
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.community.signal: INFO
+    org.springframework.kafka: WARN

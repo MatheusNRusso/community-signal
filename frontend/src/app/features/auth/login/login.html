@@ -1,0 +1,79 @@
+<!-- ============================================================
+     LOGIN  (/login)
+     Component API: username, password, loading, error, onSubmit()
+     Requires FormsModule (for [(ngModel)]) — see ts-changes.md
+============================================================ -->
+<div class="login">
+
+  <!-- LEFT · brand panel -->
+  <aside class="login__brand">
+    <div class="login__logo">
+      <span class="login__logo-mark" aria-hidden="true">🛰️</span>
+      <span class="login__logo-text">Community Signal</span>
+    </div>
+
+    <!-- animated radar / signal pulse -->
+    <div class="radar" aria-hidden="true">
+      <span class="radar__pulse"></span>
+      <span class="radar__pulse radar__pulse--d1"></span>
+      <span class="radar__pulse radar__pulse--d2"></span>
+      <span class="radar__pulse radar__pulse--d3"></span>
+      <span class="radar__ring radar__ring--mid"></span>
+      <span class="radar__ring radar__ring--inner"></span>
+      <span class="radar__core"></span>
+    </div>
+
+    <div class="login__tagline">
+      <h1>Signal in, clarity out.</h1>
+      <p>AI-assisted content review, built for editorial teams.</p>
+    </div>
+  </aside>
+
+  <!-- RIGHT · form panel -->
+  <main class="login__panel">
+    <form class="login__form" (ngSubmit)="onSubmit()" novalidate>
+      <h2 class="login__title">Welcome back</h2>
+      <p class="login__subtitle">Sign in to continue to your review queue.</p>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          autocomplete="username"
+          placeholder="Enter your username"
+          [(ngModel)]="username"
+          [disabled]="loading" />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          [(ngModel)]="password"
+          [disabled]="loading" />
+      </div>
+
+      <div class="login__forgot">
+        <a href="#" (click)="$event.preventDefault()">Forgot password?</a>
+      </div>
+
+      <!-- inline error -->
+      <p class="login__error" role="alert" *ngIf="error">
+        <span aria-hidden="true">⚠️</span>{{ error }}
+      </p>
+
+      <button class="btn btn--primary btn--block" type="submit" [disabled]="loading">
+        <span class="spinner" *ngIf="loading" aria-hidden="true"></span>
+        <span>{{ loading ? 'Signing in…' : 'Sign In' }}</span>
+      </button>
+
+      <p class="login__version">Community Signal · v1.0.0</p>
+    </form>
+  </main>
+</div>

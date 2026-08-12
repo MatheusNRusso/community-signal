@@ -1,0 +1,148 @@
+<!-- ============================================================
+     DRAFT DETAIL  (/review/:id)
+     Component API: draft, loading, submitting, note, reviewerId,
+       showConfirmModal, pendingAction,
+       startReview(), confirmAction('approve'|'reject'),
+       executeAction(), cancelAction()
+     Notes:
+       • Ring uses r=54 → circumference 339.292. The dash math is
+         inline; move to a getter if you prefer (see ts-changes.md).
+       • Reject is disabled until `note` is non-empty.
+       • Action buttons are conditional on draft.status.
+============================================================ -->
+<div class="detail">
+
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__mark" aria-hidden="true">🛰️</span>
+      <span class="topbar__name">Community Signal</span>
+    </div>
+  </header>
+
+  <main class="detail__main" *ngIf="draft">
+    <a class="back" routerLink="/review">← Back to list</a>
+
+    <!-- header card -->
+    <section class="card card--header">
+      <div class="card--header__meta">
+        <div class="chips">
+          <span class="channel" [ngClass]="'channel--' + draft.channel.toLowerCase()">
+            <span aria-hidden="true">{{ channelIcon(draft.channel) }}</span>
+            <span>{{ draft.channel | titlecase }}</span>
+          </span>
+          <span class="status" [ngClass]="'status--' + draft.status.toLowerCase()">
+            {{ draft.status | replace:'_':' ' | titlecase }}
+          </span>
+        </div>
+        <div class="detail__created">Created {{ draft.createdAt }}</div>
+        <div class="detail__id">Draft #{{ draft.id }}</div>
+      </div>
+
+      <!-- guardrail ring -->
+      <div class="ring">
+        <div class="ring__chart">
+          <svg width="132" height="132" viewBox="0 0 132 132" aria-label="Guardrail score">
+            <circle cx="66" cy="66" r="54" fill="none" stroke="#eeeeee" stroke-width="12" />
+            <circle cx="66" cy="66" r="54" fill="none"
+                    [attr.stroke]="guardrailColor"
+                    stroke-width="12" stroke-linecap="round"
+                    [attr.stroke-dasharray]="ringDash"
+                    transform="rotate(-90 66 66)" />
+          </svg>
+          <div class="ring__value">
+            <span class="ring__pct">{{ ((draft.guardrailScore ?? 0) * 100).toFixed(0) }}%</span>
+            <span class="ring__cap">GUARDRAIL</span>
+          </div>
+        </div>
+        <div class="ring__verdict" [class.ring__verdict--fail]="!draft.guardrailPassed">
+          {{ draft.guardrailPassed ? '✓ Passed' : '✗ Failed' }}
+        </div>
+      </div>
+    </section>
+
+    <!-- content card -->
+    <section class="card">
+      <div class="section-label">CONTENT</div>
+      <p class="content">{{ draft.content }}</p>
+      <div class="meta">
+        <span class="meta__chip"><span class="meta__key">Window ID</span><span class="meta__val">{{ draft.windowId }}</span></span>
+        <span class="meta__chip"><span class="meta__key">Cluster ID</span><span class="meta__val">{{ draft.clusterId }}</span></span>
+        <span class="meta__chip"><span class="meta__key">Model</span><span class="meta__val">{{ draft?.llmModel ?? "—" }}</span></span>
+      </div>
+    </section>
+
+    <!-- review card -->
+    <section class="card">
+      <div class="section-label">REVIEW</div>
+
+      <div class="field">
+        <label for="reviewerId">Reviewer ID</label>
+        <input id="reviewerId" name="reviewerId" type="text" class="field__sm" [(ngModel)]="reviewerId" />
+      </div>
+
+      <div class="field">
+        <label for="note">Review note</label>
+        <textarea id="note" name="note" rows="4" maxlength="500"
+                  placeholder="Add context for your decision…"
+                  [(ngModel)]="note"></textarea>
+        <div class="field__count">{{ note.length }} / 500</div>
+      </div>
+
+      <!-- actions -->
+      <div class="actions">
+        <!-- PENDING → Start Review -->
+        <button *ngIf="draft.status === 'PENDING'"
+                type="button" class="btn btn--outline btn--lg"
+                (click)="startReview()">Start Review</button>
+
+        <!-- IN_REVIEW → Approve / Reject -->
+        <ng-container *ngIf="draft.status === 'IN_REVIEW'">
+          <button type="button" class="btn btn--approve btn--lg"
+                  (click)="confirmAction('approve')">
+            <span aria-hidden="true">✓</span> Approve
+          </button>
+          <button type="button" class="btn btn--reject btn--lg"
+                  [disabled]="!note.trim()"
+                  (click)="confirmAction('reject')">
+            <span aria-hidden="true">✕</span> Reject
+          </button>
+          <span class="actions__hint" *ngIf="!note.trim()">A note is required to reject.</span>
+        </ng-container>
+
+        <!-- closed -->
+        <div *ngIf="draft.status === 'APPROVED' || draft.status === 'REJECTED'"
+             class="resolved"
+             [class.resolved--reject]="draft.status === 'REJECTED'">
+          <span aria-hidden="true">{{ draft.status === 'APPROVED' ? '✓' : '✕' }}</span>
+          <span>{{ draft.status === 'APPROVED' ? 'Approved' : 'Rejected' }} by {{ draft.reviewerId || 'reviewer-1' }}</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- confirmation modal -->
+  <div class="modal" *ngIf="showConfirmModal" (click)="cancelAction()">
+    <div class="modal__box" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h3 class="modal__title">
+        {{ pendingAction === 'approve' ? 'Approve this draft?' : 'Reject this draft?' }}
+      </h3>
+      <p class="modal__body">
+        {{ pendingAction === 'approve'
+            ? 'This draft will be published to the channel and marked as approved. You can’t undo this from the queue.'
+            : 'This draft will be marked as rejected and removed from the publish queue. Your note will be attached for the record.' }}
+      </p>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" (click)="cancelAction()">Cancel</button>
+        <button type="button"
+                class="btn btn--lg"
+                [class.btn--approve]="pendingAction === 'approve'"
+                [class.btn--reject]="pendingAction === 'reject'"
+                [disabled]="submitting"
+                (click)="executeAction()">
+          <span class="spinner" *ngIf="submitting" aria-hidden="true"></span>
+          {{ pendingAction === 'approve' ? 'Approve' : 'Reject' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
