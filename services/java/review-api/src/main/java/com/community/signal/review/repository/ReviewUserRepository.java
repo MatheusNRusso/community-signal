@@ -10,24 +10,11 @@ import java.util.UUID;
 @Repository
 public interface ReviewUserRepository extends JpaRepository<ReviewUser, UUID> {
 
-    /**
-     * Finds a user by their unique username.
-     *
-     * @param username the username to search for
-     * @return an Optional containing the ReviewUser if found, or empty if not
-     */
     Optional<ReviewUser> findByUsername(String username);
 
-    /**
-     * Checks if a user with the given username already exists.
-     *
-     * @param username the username to check
-     * @return true if a user with the username exists, false otherwise
-     */
-    boolean existsByUsername(String username);
+    Optional<ReviewUser> findByGithubId(Long githubId);
 
-    /**
-     * Checks if any user with the specified role exists.
-     */
-    boolean existsByRole(String role);
+    Optional<ReviewUser> findByGithubUsername(String githubUsername);
+
+    boolean existsByUsername(String username);
 }

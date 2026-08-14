@@ -21,8 +21,8 @@ public class JwtTokenProvider {
     private final long expirationMillis;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expirationMillis) {
+            @Value("${api.security.jwt.secret}") String secret,
+            @Value("${api.security.jwt.expiration-ms}") long expirationMillis) {
         
         if (secret == null || secret.length() < 32) {
             throw new IllegalArgumentException("jwt.secret.must.be.at.least.256.bits");

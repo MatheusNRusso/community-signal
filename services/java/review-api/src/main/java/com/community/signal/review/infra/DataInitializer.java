@@ -1,4 +1,4 @@
-package com.community.signal.review.config;
+package com.community.signal.review.infra;
 
 import com.community.signal.review.domain.ReviewUser;
 import com.community.signal.review.repository.ReviewUserRepository;
@@ -11,38 +11,40 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class AdminBootstrapRunner implements ApplicationRunner {
+public class DataInitializer implements ApplicationRunner {
 
     private final ReviewUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${admin.username:#{null}}")
-    private String adminUsername;
+    @Value("${admin.email:}")
+    private String adminEmail;
 
-    @Value("${admin.password:#{null}}")
+    @Value("${admin.password:}")
     private String adminPassword;
 
     @Override
     public void run(ApplicationArguments args) {
-        // 1. Validate environment variables
-        if (isBlank(adminUsername) || isBlank(adminPassword)) {
-            log.warn("admin.bootstrap.skipped reason=env_vars_missing_or_empty vars=ADMIN_USERNAME,ADMIN_PASSWORD");
+        if (adminEmail == null || adminEmail.isBlank()
+                || adminPassword == null || adminPassword.isBlank()) {
+            log.warn("admin.user.not.created reason=missing_email_or_password");
             return;
         }
 
-        // 2. Check idempotency (do not create if an admin already exists)
-        if (userRepository.existsByRole("ROLE_ADMIN")) {
-            log.info("admin.bootstrap.skipped reason=admin_already_exists");
+        String email = adminEmail.toLowerCase().trim();
+
+        if (userRepository.existsByUsername(email)) {
+            log.info("admin.user.already.exists email={}", email);
             return;
         }
 
-        // 3. Bootstrap initial admin
         ReviewUser admin = ReviewUser.builder()
-                .username(adminUsername)
+                .id(UUID.randomUUID())
+                .username(email)
                 .password(passwordEncoder.encode(adminPassword))
                 .role("ROLE_ADMIN")
                 .active(true)
@@ -51,10 +53,6 @@ public class AdminBootstrapRunner implements ApplicationRunner {
 
         userRepository.save(admin);
 
-        log.info("admin.bootstrap.success username={}", adminUsername);
-    }
-
-    private boolean isBlank(String str) {
-        return str == null || str.isBlank();
+        log.info("admin.user.created email={}", email);
     }
 }

@@ -33,7 +33,7 @@ public class ReviewUser implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String username;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String password;
 
     @Column(nullable = false, length = 50)
@@ -44,6 +44,19 @@ public class ReviewUser implements UserDetails {
 
     @Column(name = "created_at")
     private Instant createdAt;
+
+    // ── GitHub OAuth fields ─────────────────────────────────────────────────
+    @Column(name = "github_id")
+    private Long githubId;
+
+    @Column(name = "github_username", length = 100)
+    private String githubUsername;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(name = "is_github_user")
+    private boolean githubUser;
 
     // --- UserDetails Implementation ---
 
@@ -80,5 +93,15 @@ public class ReviewUser implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.active;
+    }
+
+    // ── Helper methods ──────────────────────────────────────────────────────
+
+    public void markAsGithubUser() {
+        this.githubUser = true;
+        // GitHub users don't need a password
+        if (this.password == null || this.password.isBlank()) {
+            this.password = "GITHUB_OAUTH_USER";
+        }
     }
 }
