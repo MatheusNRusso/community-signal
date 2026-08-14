@@ -14,8 +14,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -45,21 +43,31 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // ── Nível 1: Público (somente leitura) ─────────────────────
+                .requestMatchers(HttpMethod.GET,
+                    "/api/drafts", "/api/drafts/*", "/api/drafts/stats").permitAll()
+
+                // ── Nível 2: Autenticado (ações de review) ─────────────────
+                .requestMatchers(HttpMethod.POST,
+                    "/api/drafts/*/approve",
+                    "/api/drafts/*/reject",
+                    "/api/drafts/*/review").authenticated()
+
+                // ── Nível 3: Admin ─────────────────────────────────────────
                 .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
-                .requestMatchers("/api/auth/**").permitAll()
+
+                // ── Auth + OAuth + health ──────────────────────────────────
+                .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/login/oauth2/**", "/oauth2/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .authorizationEndpoint(auth -> auth
-                    .baseUri("/oauth2/authorization")
-                )
+                .authorizationEndpoint(auth -> auth.baseUri("/oauth2/authorization"))
                 .successHandler((request, response, authentication) -> {
                     try {
                         String jwt = gitHubOAuthService.handleOAuthSuccess(authentication);
                         log.info("github.oauth.handler.success redirecting_to_frontend");
-                        // JWT in URL fragment: never sent to server, never logged
                         response.setStatus(HttpServletResponse.SC_FOUND);
                         response.setHeader("Location", frontendUrl + "/oauth2/callback#token=" + jwt);
                     } catch (SecurityException e) {
@@ -95,11 +103,6 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
     @Bean
