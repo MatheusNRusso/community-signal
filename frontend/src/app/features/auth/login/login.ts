@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -45,5 +46,12 @@ export class LoginComponent {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  loginWithGithub(): void {
+    // Redirect to backend OAuth2 authorization endpoint
+    // The backend will redirect to GitHub, then back to /login/oauth2/code/github,
+    // then redirect to frontend /oauth2/callback#token=...
+    window.location.href = `${environment.apiUrl}/oauth2/authorization/github`;
   }
 }

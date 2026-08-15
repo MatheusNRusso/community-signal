@@ -19,11 +19,40 @@ export class AuthService {
   login(request: LoginRequest): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.base}/login`, request).pipe(
       tap(response => {
-        localStorage.setItem(this.TOKEN_KEY, response.token);
-        localStorage.setItem(this.USER_KEY, JSON.stringify({ username: response.username, role: response.role }));
-        this.loggedIn$.next(true);
+        this.storeToken(response.token, response.username, response.role);
       })
     );
+  }
+
+  handleOAuthCallback(token: string): void {
+    // Decode JWT to extract user info
+    const payload = this.decodeJwt(token);
+    const username = payload?.sub || 'github-user';
+    const roles = payload?.roles || [];
+    const role = Array.isArray(roles) && roles.length > 0 ? roles[0] : 'ROLE_REVIEWER';
+    
+    this.storeToken(token, username, role);
+  }
+
+  private storeToken(token: string, username: string, role: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.USER_KEY, JSON.stringify({ username, role }));
+    this.loggedIn$.next(true);
+  }
+
+  private decodeJwt(token: string): any {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64).split('').map(c => 
+          '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        ).join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return null;
+    }
   }
 
   logout(): void {

@@ -1,3 +1,4 @@
+@use "sass:color";
 /* ============================================================
    REVIEW DASHBOARD  styles
 ============================================================ */
@@ -162,7 +163,7 @@ $font:           'Inter', system-ui, -apple-system, sans-serif;
     color: $text-faint;
   }
 
-  &:hover:not(.tab--active) { border-color: darken($border, 8%); }
+  &:hover:not(.tab--active) { border-color: color.adjust($border, $lightness: -8%); }
   &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($primary, 0.25); }
 
   &--active {

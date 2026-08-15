@@ -16,6 +16,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login').then(m => m.LoginComponent)
   },
   {
+    path: 'oauth2/callback',
+    loadComponent: () => import('./features/auth/oauth2-callback/oauth2-callback').then(m => m.OAuth2CallbackComponent)
+  },
+  {
     path: 'review',
     canActivate: [authGuard],
     loadComponent: () => import('./features/review/draft-list/draft-list').then(m => m.DraftListComponent)
