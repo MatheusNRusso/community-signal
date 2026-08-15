@@ -12,26 +12,36 @@ export class AuthService {
   private readonly base = `${environment.apiUrl}/api/auth`;
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY  = 'auth_user';
-  private loggedIn$ = new BehaviorSubject<boolean>(!!localStorage.getItem(this.TOKEN_KEY));
+  private loggedIn$ = new BehaviorSubject<boolean>(this.isTokenValid());
 
   constructor(private http: HttpClient, private router: Router) {}
 
   login(request: LoginRequest): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.base}/login`, request).pipe(
-      tap(response => {
-        this.storeToken(response.token, response.username, response.role);
-      })
+      tap(res => this.storeToken(res.token, res.username, res.role))
     );
   }
 
   handleOAuthCallback(token: string): void {
-    // Decode JWT to extract user info
     const payload = this.decodeJwt(token);
     const username = payload?.sub || 'github-user';
     const roles = payload?.roles || [];
-    const role = Array.isArray(roles) && roles.length > 0 ? roles[0] : 'ROLE_REVIEWER';
-    
+    const role = Array.isArray(roles) && roles.length ? roles[0] : 'ROLE_REVIEWER';
     this.storeToken(token, username, role);
+  }
+
+  isTokenValid(): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+    const payload = this.decodeJwt(token);
+    if (!payload?.exp) return false;
+    return payload.exp * 1000 > Date.now();
+  }
+
+  clearInvalidToken(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    this.loggedIn$.next(false);
   }
 
   private storeToken(token: string, username: string, role: string): void {
@@ -42,23 +52,17 @@ export class AuthService {
 
   private decodeJwt(token: string): any {
     try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64).split('').map(c => 
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(decodeURIComponent(
+        atob(base64).split('').map(c =>
           '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
         ).join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch {
-      return null;
-    }
+      ));
+    } catch { return null; }
   }
 
   logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
-    this.loggedIn$.next(false);
+    this.clearInvalidToken();
     this.router.navigate(['/login']);
   }
 

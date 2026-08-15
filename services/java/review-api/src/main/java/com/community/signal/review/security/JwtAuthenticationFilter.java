@@ -1,5 +1,7 @@
 package com.community.signal.review.security;
 
+import com.community.signal.review.domain.ReviewUser;
+import com.community.signal.review.repository.ReviewUserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final ReviewUserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -31,45 +34,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. Extract Authorization header from request
         String authHeader = request.getHeader("Authorization");
 
-        // 2. If header is null or does not start with "Bearer " → continue chain and return
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Extract token
         String token = authHeader.substring(7);
 
-        // 4. Validate token and set SecurityContext
-        if (tokenProvider.validateToken(token)) {
-            String username = tokenProvider.getUsernameFromToken(token);
-            List<String> roles = tokenProvider.getRolesFromToken(token);
-
-            // c. Build List<GrantedAuthority> from roles
-            List<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
-
-            // d. Create UsernamePasswordAuthenticationToken
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
-
-            // e. Set details
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            // f. Set SecurityContextHolder
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            log.debug("jwt.filter.authenticated username={} uri={}", username, request.getRequestURI());
-        } else {
-            // 6. Log WARN if token is present but invalid
+        // 1. Validate signature + expiration
+        if (!tokenProvider.validateToken(token)) {
             log.warn("jwt.filter.invalid.token uri={}", request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        // 5. Call filterChain.doFilter
+        String username = tokenProvider.getUsernameFromToken(token);
+        List<String> tokenRoles = tokenProvider.getRolesFromToken(token);
+
+        // 2. Validate user exists and is active in database
+        ReviewUser user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            log.warn("jwt.filter.user.not.found username={} uri={}", username, request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (!user.isActive()) {
+            log.warn("jwt.filter.user.inactive username={} uri={}", username, request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 3. Use DB role (authoritative) instead of token role (defensive: prevents role escalation)
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority(user.getRole())
+        );
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(username, null, authorities);
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.debug("jwt.filter.authenticated username={} role={} uri={}", username, user.getRole(), request.getRequestURI());
+
         filterChain.doFilter(request, response);
     }
 }
