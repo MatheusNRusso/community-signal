@@ -37,7 +37,7 @@ public class GitHubOAuthService {
     public String handleOAuthSuccess(Authentication authentication) {
         OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
 
-        Long githubId = oauthUser.getAttribute("id");
+        Long githubId = ((Number) oauthUser.getAttribute("id")).longValue();
         String login = oauthUser.getAttribute("login");
         String avatarUrl = oauthUser.getAttribute("avatar_url");
 
