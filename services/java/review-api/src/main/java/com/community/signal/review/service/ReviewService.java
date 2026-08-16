@@ -25,7 +25,7 @@ import java.util.UUID;
 public class ReviewService {
 
     private static final Map<DraftStatus, Set<DraftStatus>> VALID_TRANSITIONS = Map.of(
-            DraftStatus.PENDING,   Set.of(DraftStatus.IN_REVIEW, DraftStatus.REJECTED),
+            DraftStatus.PENDING,   Set.of(DraftStatus.IN_REVIEW, DraftStatus.APPROVED, DraftStatus.REJECTED),
             DraftStatus.IN_REVIEW, Set.of(DraftStatus.APPROVED, DraftStatus.REJECTED, DraftStatus.REVISED),
             DraftStatus.REVISED,   Set.of(DraftStatus.APPROVED, DraftStatus.REJECTED)
     );
