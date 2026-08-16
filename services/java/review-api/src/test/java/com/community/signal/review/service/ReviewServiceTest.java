@@ -81,10 +81,10 @@ class ReviewServiceTest {
     }
 
     @Test void getStats_returnsAll() {
-        when(draftRepository.countByStatusNative("PENDING")).thenReturn(5L);
-        when(draftRepository.countByStatusNative("IN_REVIEW")).thenReturn(2L);
-        when(draftRepository.countByStatusNative("APPROVED")).thenReturn(10L);
-        when(draftRepository.countByStatusNative("REJECTED")).thenReturn(3L);
+        when(draftRepository.countByStatus(DraftStatus.PENDING)).thenReturn(5L);
+        when(draftRepository.countByStatus(DraftStatus.IN_REVIEW)).thenReturn(2L);
+        when(draftRepository.countByStatus(DraftStatus.APPROVED)).thenReturn(10L);
+        when(draftRepository.countByStatus(DraftStatus.REJECTED)).thenReturn(3L);
         var stats = reviewService.getStats();
         assertThat(stats).containsEntry("pending", 5L).containsEntry("approved", 10L);
     }
