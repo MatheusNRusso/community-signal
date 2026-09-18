@@ -49,10 +49,10 @@ Built as a **portfolio-grade production system** demonstrating:
 ## 🏗️ Architecture
 
 ```
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│   Vercel     │      │    Render    │      │    Neon      │
-│   (Angular)  │─────▶│ (Spring Boot)│─────▶│ (PostgreSQL) │
-└──────────────┘      └──────────────┘      └──────────────┘
++-----------------+      +-----------------+      +-----------------+
+|     Vercel      |----->|     Render      |----->|      Neon       |
+|    (Angular)    |      |  (Spring Boot)  |      |  (PostgreSQL)   |
++-----------------+      +-----------------+      +-----------------+
 ```
 
 The full event-driven pipeline (11 microservices with Kafka, embeddings, LLM) runs in the private development repository. This public repo contains the **production-scoped** Review API + Frontend.
@@ -258,8 +258,7 @@ mvn test
 
 ## 👤 Author
 
-**Matheus N. Russo**  
-Senior Backend Engineer & Systems Architect
+**Matheus N. Russo**
 
 - GitHub: [@MatheusNRusso](https://github.com/MatheusNRusso)
 
