@@ -18,16 +18,20 @@
 | **API Health** | https://community-signal-api.onrender.com/actuator/health |
 | **Database** | Neon (serverless PostgreSQL) |
 
-### 🔑 Demo Credentials
+### 🔐 Authentication
 
-```
-Username: demo
-Password: Demo2026!
-```
+**GitHub OAuth (primary flow)** — click **Sign in with GitHub** on the login page.
+Access is restricted to usernames listed in `ALLOWED_GITHUB_USERS`;
+allowed users are provisioned automatically with `ROLE_REVIEWER`.
 
-⚠️ Demonstration environment. Data may be reset periodically.
+**Admin bootstrap (email/password)** — on first startup the application
+provisions an admin account from the `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+environment variables. Use it via the login form or `POST /api/auth/login`.
 
----
+> **Security note:** hardcoded demo credentials were removed in migration
+> `V3`. All access is now via GitHub OAuth (allowlist) or the env-provisioned
+> admin account.
+
 
 ## 📖 Overview
 
