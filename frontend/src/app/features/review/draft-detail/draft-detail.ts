@@ -22,6 +22,7 @@ export class DraftDetailComponent implements OnInit {
   reviewerId = '';
   showConfirmModal = false;
   pendingAction: 'approve' | 'reject' | null = null;
+  currentUser: { username: string; role: string } | null = null;
 
   readonly RING_CIRC = 2 * Math.PI * 54;
 
@@ -31,7 +32,9 @@ export class DraftDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) {
+    this.currentUser = this.authService.getUser();
+  }
 
   ngOnInit(): void {
     this.reviewerId = this.authService.getUser()?.username ?? '';
@@ -105,5 +108,9 @@ export class DraftDetailComponent implements OnInit {
       this.pendingAction = null;
       this.router.navigate(['/review']);
     });
+  }
+
+  signIn(): void {
+    window.location.href = 'https://community-signal-9h8r.onrender.com/oauth2/authorization/github';
   }
 }
