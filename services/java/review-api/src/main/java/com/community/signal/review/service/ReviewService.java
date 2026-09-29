@@ -13,7 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
@@ -23,15 +22,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class ReviewService {
-
     private static final Map<DraftStatus, Set<DraftStatus>> VALID_TRANSITIONS = Map.of(
             DraftStatus.PENDING,   Set.of(DraftStatus.IN_REVIEW, DraftStatus.APPROVED, DraftStatus.REJECTED),
             DraftStatus.IN_REVIEW, Set.of(DraftStatus.APPROVED, DraftStatus.REJECTED, DraftStatus.REVISED),
             DraftStatus.REVISED,   Set.of(DraftStatus.APPROVED, DraftStatus.REJECTED)
     );
 
-    private final DraftRepository     draftRepository;
-    private final EntityManager       entityManager;
+    private final DraftRepository draftRepository;
+    private final EntityManager entityManager;
     private final DraftEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
@@ -41,8 +39,7 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public Draft getDraft(UUID id) {
-        return draftRepository.findById(id)
-                .orElseThrow(() -> new DraftNotFoundException(id));
+        return draftRepository.findById(id).orElseThrow(() -> new DraftNotFoundException(id));
     }
 
     @Transactional
@@ -70,6 +67,7 @@ public class ReviewService {
         draft.setReviewedAt(now);
         eventPublisher.publishApproved(draft);
         log.info("draft.approved draftId={} reviewerId={}", id, reviewerId);
+        autoResetIfEmpty();
         return draft;
     }
 
@@ -85,6 +83,7 @@ public class ReviewService {
         draft.setReviewerNote(note);
         draft.setReviewedAt(now);
         log.info("draft.rejected draftId={} reviewerId={}", id, reviewerId);
+        autoResetIfEmpty();
         return draft;
     }
 
@@ -105,16 +104,28 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public Map<String, Long> getStats() {
         return Map.of(
-                "pending",   draftRepository.countByStatus(DraftStatus.PENDING),
+                "pending", draftRepository.countByStatus(DraftStatus.PENDING),
                 "in_review", draftRepository.countByStatus(DraftStatus.IN_REVIEW),
-                "approved",  draftRepository.countByStatus(DraftStatus.APPROVED),
-                "rejected",  draftRepository.countByStatus(DraftStatus.REJECTED)
+                "approved", draftRepository.countByStatus(DraftStatus.APPROVED),
+                "rejected", draftRepository.countByStatus(DraftStatus.REJECTED)
         );
     }
 
+    @Transactional
+    public void resetAllDrafts() {
+        draftRepository.resetAllToStatus(DraftStatus.PENDING, Instant.now());
+        log.info("draft.reset.all triggered");
+    }
+
+    private void autoResetIfEmpty() {
+        if (draftRepository.countByStatus(DraftStatus.PENDING) == 0) {
+            log.info("draft.auto_reset.triggered no_pending_drafts_remaining");
+            resetAllDrafts();
+        }
+    }
+
     private void validateTransition(DraftStatus from, DraftStatus to) {
-        Set<DraftStatus> allowed = VALID_TRANSITIONS.getOrDefault(from, Set.of());
-        if (!allowed.contains(to)) {
+        if (!VALID_TRANSITIONS.getOrDefault(from, Set.of()).contains(to)) {
             throw new InvalidStateTransitionException(from, to);
         }
     }

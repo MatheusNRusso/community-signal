@@ -90,6 +90,12 @@ public class ReviewController {
 
 
 
+    @PostMapping("/reset")
+    public ResponseEntity<Void> resetAllDrafts() {
+        reviewService.resetAllDrafts();
+        return ResponseEntity.ok().build();
+    }
+
     // ── Request records ───────────────────────────────────────────────────────
 
     record ReviewerRequest(
