@@ -106,6 +106,10 @@ export class DraftListComponent implements OnInit {
 
   logout(): void { this.authService.logout(); }
 
+  signIn(): void {
+    window.location.href = `${(window as any).environment?.apiUrl || "https://community-signal-9h8r.onrender.com"}/oauth2/authorization/github`;
+  }
+
   scoreColor(score: number): string {
     if (score >= 80) return '#2e7d32';
     if (score >= 60) return '#f57f17';
