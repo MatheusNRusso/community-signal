@@ -12,12 +12,25 @@
 ============================================================ -->
 <div class="detail">
 
-  <header class="topbar">
-    <div class="topbar__brand">
-      <span class="topbar__mark" aria-hidden="true">🛰️</span>
-      <span class="topbar__name">Community Signal</span>
-    </div>
-  </header>
+  <header class="topbar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #e5e7eb;">
+  <div class="topbar__brand">
+    <a routerLink="/review" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;">
+      <span class="topbar__mark" aria-hidden="true">🛰</span>
+      <span class="topbar__name" style="font-weight: 600; font-size: 1.1rem;">Community Signal</span>
+    </a>
+  </div>
+
+  <div class="topbar__actions" style="display: flex; align-items: center; gap: 1.5rem;">
+    <span class="topbar__label" style="color: #6b7280; font-size: 0.9rem;">Draft Review</span>
+    <ng-container *ngIf="currentUser">
+      <span class="topbar__username" style="font-weight: 500;">{{ currentUser.username }}</span>
+      <button class="btn btn--ghost btn--sm" type="button" (click)="logout()">Log out</button>
+    </ng-container>
+    <ng-container *ngIf="!currentUser">
+      <button class="btn btn--primary btn--sm" type="button" (click)="signIn()">Sign in with GitHub</button>
+    </ng-container>
+  </div>
+</header>
 
   <main class="detail__main" *ngIf="draft">
   <!-- Read-only banner for anonymous users -->
