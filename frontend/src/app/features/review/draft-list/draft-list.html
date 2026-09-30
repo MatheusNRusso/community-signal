@@ -11,8 +11,7 @@
 ============================================================ -->
 <div class="dash">
 
-  <!-- top bar -->
-  <header class="topbar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background: #fff; border-bottom: 1px solid #e5e7eb;">
+<header class="topbar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; background: #1976d2; color: white; border-bottom: 2px solid #1565c0;">
   <div class="topbar__brand">
     <a routerLink="/review" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;">
       <span class="topbar__mark" aria-hidden="true">🛰</span>
@@ -21,16 +20,19 @@
   </div>
 
   <div class="topbar__actions" style="display: flex; align-items: center; gap: 1.5rem;">
-    <span class="topbar__label" style="color: #6b7280; font-size: 0.9rem;">Draft Review</span>
+    <span class="topbar__label" style="color: rgba(255,255,255,0.9); font-size: 0.9rem;">Draft Review</span>
     <ng-container *ngIf="currentUser">
       <span class="topbar__username" style="font-weight: 500;">{{ currentUser.username }}</span>
-      <button class="btn btn--ghost btn--sm" type="button" (click)="logout()">Log out</button>
+      <button class="btn btn--ghost btn--sm" type="button" (click)="logout()" style="color: white; background: rgba(255,255,255,0.1); border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer;">Log out</button>
     </ng-container>
     <ng-container *ngIf="!currentUser">
-      <button class="btn btn--primary btn--sm" type="button" (click)="signIn()">Sign in with GitHub</button>
+      <button class="btn btn--primary btn--sm" type="button" (click)="signIn()" style="background: white; color: #1976d2; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: 500;">Sign in with GitHub</button>
     </ng-container>
   </div>
 </header>
+
+  <!-- top bar -->
+  
 
   <main class="dash__main">
     <div class="dash__head">
