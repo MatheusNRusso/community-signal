@@ -113,4 +113,8 @@ export class DraftDetailComponent implements OnInit {
   signIn(): void {
     window.location.href = 'https://community-signal-9h8r.onrender.com/oauth2/authorization/github';
   }
+
+  logout(): void {
+    this.authService.logout();
+  }
 }
