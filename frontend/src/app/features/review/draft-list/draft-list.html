@@ -127,7 +127,7 @@
                     <span class="guardrail__pct">{{ ((draft.guardrailScore ?? 0) ).toFixed(0) }}%</span>
                   </div>
                 </td>
-                <td class="table__created">{{ draft.createdAt }}</td>
+                <td class="table__created">{{ draft.createdAt | date:'MMM d, y' }}</td>
                 <td class="table__right">
                   <a class="btn btn--outline btn--sm" [routerLink]="['/review', draft.id]">
                     {{ draft.status === 'PENDING' || draft.status === 'IN_REVIEW' ? 'Review' : 'View' }}

@@ -345,3 +345,18 @@ $font:           'Inter', system-ui, -apple-system, sans-serif;
 
   &--logout { height: 34px; padding: 0 14px; font-size: 13px; }
 }
+
+/* ── GitHub-style overline labels (metadata) ─────────────────────
+   Uppercase + wide tracking + small + semibold, matching the
+   GitHub changelog label treatment. Color is intentionally NOT
+   set here so existing status/channel colors keep winning. */
+thead th,
+th,
+.channel,
+.status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--tracking-overline, 0.08em);
+  text-transform: uppercase;
+}
