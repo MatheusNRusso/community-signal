@@ -19,7 +19,7 @@ public class Draft {
     @Column(nullable = false, columnDefinition = "TEXT") private String content;
     @Column(name = "guardrail_score") private Double guardrailScore;
     @Column(name = "guardrail_passed") private Boolean guardrailPassed;
-    @JdbcTypeCode(SqlTypes.JSON) @Column(name = "guardrail_reasons", columnDefinition = "jsonb") private List<String> guardrailReasons;
+    @JdbcTypeCode(SqlTypes.JSON) @Column(name = "guardrail_reasons", columnDefinition = "jsonb") private Object guardrailReasons;
     @Column(name = "llm_model") private String llmModel;
     @Column(name = "prompt_version") private String promptVersion;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 32) @Builder.Default private DraftStatus status = DraftStatus.PENDING;
